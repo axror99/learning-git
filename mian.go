@@ -1,2 +1,4 @@
+package  name
+
 func main(){}
 
