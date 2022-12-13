@@ -1,6 +1,7 @@
 // TODO: Implement utils
 // Maxsus
 // ozgarishlar  bolmoqda
-// shunga kora amal qilinglar 
-// ok
+// shunga  kora  mislllar  ozgardi
+// tekshirib  korilar  nima  qilshni 
+// aniq  aytolmiman nima  qilishnni 
 
