@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Memorization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .highlight {
+            color: blue; /* Change the color as needed */
+        }
+        button {
+            border: 1px solid black; /* Add border style */
+            padding: 5px 10px; /* Add padding for better appearance */
+            margin: 5px; /* Add margin for spacing between buttons */
+            cursor: pointer; /* Add cursor style */
+        }
+        .ridge {
+            border-style: ridge; /* Add ridge border style */
+        }
+    </style>
+</head>
+<body>
+<a href="index.html">Home</a>
+<div id="wordDisplay"></div>
+<button onclick="speakTranslation()">Hear Translation</button>
+<button onclick="pauseReading()">Pause Reading</button>
+<button onclick="stopReading()">Stop Reading</button>
+<button onclick="resetPage()">Reset</button>
+
+<script>
+    let currentWordIndex = 0;
+    let isReading = false;
+    let isPaused = false;
+    let timeoutId;
+    const dictionary = {
+        "восемь": "eight",
+        "доска": "board",
+        "появляться": "to appear",
+        "неделя": "week",
+        "завод": "factory",
+        "форма": "form",
+        "являться": "to be (sth) (formal)",
+        "вещь": "thing",
+        "герой": "hero",
+        "кроме": "except, besides",
+        "подниматься": "to rise, climb",
+        "съезд": "congress",
+        "точно": "exactly; punctually",
+        "ход": "movement",
+        "равно": "equal, alike (adv)",
+        "шаг": "step",
+        "клуб": "club",
+        "крупный": "large, important",
+        "вспоминать": "to remember, recall",
+        "небольшой": "small",
+        "художественный": "artistic",
+        "кто-то": "someone",
+        "нравиться": "to please (s. o.)",
+        "школьный": "school (adj)",
+        "государство": "state",
+        "американский": "American",
+        "строить": "to build",
+        "восьмой": "eighth",
+        "немного": "a little, not much",
+        "пауза": "pause",
+        "показывать": "to show (sth to s.o.)",
+        "далеко": "far",
+        "затем": "after that, then",
+        "здание": "building",
+        "однажды": "once, one day",
+        "птица": "bird",
+        "самолёт": "aeroplane",
+        "семь": "seven",
+        "шофёр": "driver",
+        "двести": "two hundred",
+        "известный": "well-known",
+        "правильно": "correctly",
+        "решение": "decision; solution",
+        "вечером": "in the evening",
+        "готовый": "ready",
+        "стараться": "to try",
+        "например": "for example",
+        "простой": "simple",
+        "произведение": "a work",
+        "учить": "to learn (sth)",
+        "учить": "to teach (s.o. sth)",
+        "иной": "other",
+        "результат": "result",
+        "доктор": "doctor",
+        "случаться": "to happen",
+        "называть": "to call, name (s.o. sth)",
+        "важный": "important",
+        "знание": "knowledge",
+        "улыбаться": "to smile (at)",
+        "плохо": "badly",
+        "учиться": "to learn (to do sth)",
+        "открывать": "to open; to discover",
+        "оставаться": "to stay",
+        "наука": "science; scholarship",
+        "камень": "stone",
+        "против": "against; opposite",
+        "развитие": "development",
+        "бог": "God",
+        "общество": "society",
+        "ничего": "nothing; all right, not too bad; never mind",
+        "условие": "condition",
+        "господин": "gentleman; Mr",
+        "солдат": "soldier",
+        "революция": "revolution",
+        "начинаться": "to begin",
+        "область": "oblast, province; area, field (of activity)",
+        "что-то": "something; (coll) somewhat, somehow",
+        "власть": "power",
+        "судьба": "fate",
+        "действие": "act, action",
+        "мера": "measure",
+        "энергия": "energy",
+        "ряд": "row, line, series",
+        "находиться": "to be situated; to be found, turn up",
+        "положение": "position",
+        "глядеть": "to look (at)",
+        "век": "century; age, era",
+        "миллион": "million",
+        "общественный": "social, public",
+        "основной": "basic, fundamental",
+        "генерал": "general (noun)",
+        "интерес": "interest",
+        "легко": "easily; it is easy",
+        "материал": "material",
+        "цель": "target, purpose",
+        "огонь": "fire; light",
+        "закон": "law",
+        "природа": "nature",
+        "масса": "mass",
+        "бой": "battle"
+    };
+
+
+
+    // Function to read out loud the provided word in the specified language
+    function speakWord(word, lang) {
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = lang;
+        speechSynthesis.speak(utterance);
+        return new Promise(resolve => {
+            utterance.onend = resolve;
+        });
+    }
+
+    // Function to display all word pairs
+    function displayWordPairs() {
+        let pairsHTML = '';
+        for (const russianWord in dictionary) {
+            if (dictionary.hasOwnProperty(russianWord)) {
+                const englishTranslation = dictionary[russianWord];
+                pairsHTML += `<p>${russianWord} - ${englishTranslation}</p>`;
+            }
+        }
+        document.getElementById("wordDisplay").innerHTML = pairsHTML;
+    }
+
+    // Function to speak the translation
+    async function speakTranslation() {
+        isReading = true;
+        currentWordIndex = 0; // Reset the currentWordIndex to start from the beginning
+        await speakNextWord();
+    }
+
+    // Function to speak the next word in the translation
+    async function speakNextWord() {
+        if (!isReading) return;
+
+        const russianWords = Object.keys(dictionary);
+        if (currentWordIndex >= russianWords.length) {
+            isReading = false;
+            return;
+        }
+
+        const russianWord = russianWords[currentWordIndex];
+        const englishTranslation = dictionary[russianWord];
+        const wordPairElement = document.getElementById("wordDisplay");
+        const wordPairText = `${russianWord} - ${englishTranslation}`;
+        const currentWordPair = wordPairElement.innerHTML;
+        wordPairElement.innerHTML = currentWordPair.replace(wordPairText, `<span class="highlight">${wordPairText}</span>`);
+
+        const paragraphs = wordPairElement.querySelectorAll('p');
+        paragraphs[currentWordIndex].classList.add('ridge'); // Add ridge class to the current word
+
+        await speakWord(russianWord, 'ru-RU');
+        // Add a timeout of 100 milliseconds
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await speakWord(englishTranslation, 'en-US');
+        currentWordIndex++;
+
+        // Reset the highlighting
+        wordPairElement.innerHTML = currentWordPair;
+
+        // Remove ridge class from all paragraphs
+        paragraphs.forEach(paragraph => {
+            paragraph.classList.remove('ridge');
+        });
+
+        // Speak the next word if not paused
+        if (!isPaused) {
+            await speakNextWord();
+        }
+    }
+
+    // Function to pause reading
+    function pauseReading() {
+        isPaused = !isPaused;
+        if (!isPaused && isReading) {
+            speakNextWord();
+        }
+    }
+
+    // Function to stop reading
+    function stopReading() {
+        isReading = false;
+        isPaused = false;
+        speechSynthesis.cancel(); // Stop any ongoing speech playback
+        currentWordIndex = 0;
+        const wordPairElement = document.getElementById("wordDisplay");
+        const currentWordPair = wordPairElement.innerHTML;
+        wordPairElement.innerHTML = currentWordPair.replace('<span class="highlight">', '').replace('</span>', '');
+    }
+
+    // Function to reset the page (reload)
+    function resetPage() {
+        location.reload();
+    }
+
+    // Display all word pairs initially
+    displayWordPairs();
+</script>
+</body>
+</html>

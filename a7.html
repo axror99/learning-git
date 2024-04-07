@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Memorization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .highlight {
+            color: blue; /* Change the color as needed */
+        }
+        button {
+            border: 1px solid black; /* Add border style */
+            padding: 5px 10px; /* Add padding for better appearance */
+            margin: 5px; /* Add margin for spacing between buttons */
+            cursor: pointer; /* Add cursor style */
+        }
+        .ridge {
+            border-style: ridge; /* Add ridge border style */
+        }
+    </style>
+</head>
+<body>
+<a href="index.html">Home</a>
+<div id="wordDisplay"></div>
+<button onclick="speakTranslation()">Hear Translation</button>
+<button onclick="pauseReading()">Pause Reading</button>
+<button onclick="stopReading()">Stop Reading</button>
+<button onclick="resetPage()">Reset</button>
+
+<script>
+    let currentWordIndex = 0;
+    let isReading = false;
+    let isPaused = false;
+    let timeoutId;
+
+const dictionary2 = {
+    "политический": "political",
+    "луч": "ray, beam",
+    "волна": "wave",
+    "процесс": "process; trial, lawsuit",
+    "научный": "scientific, scholarly",
+    "различный": "different, various",
+    "мировой": "world (adj)",
+    "система": "system",
+    "лист": "leaf (of plant); sheet (of paper)",
+    "хоть": "even if, if only, even, although",
+    "ребёнок": "child",
+    "связь": "connection, link, communication",
+    "вообще": "in general",
+    "верить": "to believe (+d) s.o. or sth, (в +a ) in s.o. or sth",
+    "мужчина": "man",
+    "что-нибудь": "anything",
+    "представлять": "to present, introduce",
+    "искать": "to search for, to look for",
+    "писатель": "writer",
+    "промышленность": "industry",
+    "учёный": "learned, scholarly; (as noun) scholar, scientist",
+    "верно": "faithfully, truly; it is true",
+    "служить": "to serve",
+    "правительство": "government",
+    "экономический": "economic",
+    "есть": "to eat",
+    "рабочий": "(blue collar) worker; working",
+    "современный": "modern, contemporary",
+    "работник": "worker, s.o. who works",
+    "чёрт": "devil",
+    "качество": "quality",
+    "международный": "international",
+    "офицер": "officer",
+    "проблема": "problem",
+    "требовать": "to demand",
+    "коммунизм": "communism",
+    "корабль": "ship",
+    "класс": "class; classroom",
+    "километр": "kilometre",
+    "число": "number; date",
+    "база": "base; depot",
+    "палец": "finger; toe",
+    "количество": "quantity",
+    "коммунист": "communist",
+    "победа": "victory",
+    "река": "river",
+    "пить": "to drink, have an alcoholic drink",
+    "человеческий": "human (adj)",
+    "гора": "mountain, hill",
+    "милый": "nice, dear",
+    "политика": "politics; policy, policies",
+    "производство": "production",
+    "национальный": "national; ethnic",
+    "холодный": "cold",
+    "государственный": "state (adj)",
+    "откуда": "from where",
+    "сложный": "complicated, complex",
+    "богатый": "rich",
+    "бросать": "to throw; abandon, give up",
+    "строительство": "construction",
+    "значение": "meaning, importance",
+    "председатель": "chairman",
+    "характер": "character",
+    "необходимый": "essential",
+    "смеяться": "to laugh (at)",
+    "бороться": "to struggle (against)",
+    "изделие": "(manufactured) article",
+    "особый": "special",
+    "смерть": "death",
+    "статья": "article (newspaper, journal)",
+    "счёт": "bill, account; count, score",
+    "весьма": "very, extremely",
+    "сельский": "rural, country",
+    "средство": "means; (pl) resources",
+    "подобный": "similar",
+    "пример": "example",
+    "революционный": "revolutionary",
+    "скорость": "speed",
+    "факт": "fact",
+    "малый": "small",
+    "чай": "tea",
+    "тёмный": "dark",
+    "явление": "phenomenon",
+    "состоять": "to consist (of)",
+    "ясно": "clearly; it is clear",
+    "точка": "dot, point; full stop",
+    "стоить": "to cost, to be worth",
+    "ум": "mind, intellect",
+    "вполне": "fully, entirely",
+    "событие": "event",
+    "существовать": "to exist",
+    "кабинет": "study, office",
+    "спасибо": "thank you",
+    "враг": "enemy",
+    "глубокий": "deep",
+    "французский": "French (adj)",
+    "близкий": "close, near",
+    "ах": "ah!, oh!",
+    "деятельность": "activity",
+    "приводить": "to bring (s.o.); (к +d) lead to"
+};
+
+
+
+    // Function to read out loud the provided word in the specified language
+    function speakWord(word, lang) {
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = lang;
+        speechSynthesis.speak(utterance);
+        return new Promise(resolve => {
+            utterance.onend = resolve;
+        });
+    }
+
+    // Function to display all word pairs
+    function displayWordPairs() {
+        let pairsHTML = '';
+        for (const russianWord in dictionary) {
+            if (dictionary.hasOwnProperty(russianWord)) {
+                const englishTranslation = dictionary[russianWord];
+                pairsHTML += `<p>${russianWord} - ${englishTranslation}</p>`;
+            }
+        }
+        document.getElementById("wordDisplay").innerHTML = pairsHTML;
+    }
+
+    // Function to speak the translation
+    async function speakTranslation() {
+        isReading = true;
+        currentWordIndex = 0; // Reset the currentWordIndex to start from the beginning
+        await speakNextWord();
+    }
+
+    // Function to speak the next word in the translation
+    async function speakNextWord() {
+        if (!isReading) return;
+
+        const russianWords = Object.keys(dictionary);
+        if (currentWordIndex >= russianWords.length) {
+            isReading = false;
+            return;
+        }
+
+        const russianWord = russianWords[currentWordIndex];
+        const englishTranslation = dictionary[russianWord];
+        const wordPairElement = document.getElementById("wordDisplay");
+        const wordPairText = `${russianWord} - ${englishTranslation}`;
+        const currentWordPair = wordPairElement.innerHTML;
+        wordPairElement.innerHTML = currentWordPair.replace(wordPairText, `<span class="highlight">${wordPairText}</span>`);
+
+        const paragraphs = wordPairElement.querySelectorAll('p');
+        paragraphs[currentWordIndex].classList.add('ridge'); // Add ridge class to the current word
+
+        await speakWord(russianWord, 'ru-RU');
+        // Add a timeout of 100 milliseconds
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await speakWord(englishTranslation, 'en-US');
+        currentWordIndex++;
+
+        // Reset the highlighting
+        wordPairElement.innerHTML = currentWordPair;
+
+        // Remove ridge class from all paragraphs
+        paragraphs.forEach(paragraph => {
+            paragraph.classList.remove('ridge');
+        });
+
+        // Speak the next word if not paused
+        if (!isPaused) {
+            await speakNextWord();
+        }
+    }
+
+    // Function to pause reading
+    function pauseReading() {
+        isPaused = !isPaused;
+        if (!isPaused && isReading) {
+            speakNextWord();
+        }
+    }
+
+    // Function to stop reading
+    function stopReading() {
+        isReading = false;
+        isPaused = false;
+        speechSynthesis.cancel(); // Stop any ongoing speech playback
+        currentWordIndex = 0;
+        const wordPairElement = document.getElementById("wordDisplay");
+        const currentWordPair = wordPairElement.innerHTML;
+        wordPairElement.innerHTML = currentWordPair.replace('<span class="highlight">', '').replace('</span>', '');
+    }
+
+    // Function to reset the page (reload)
+    function resetPage() {
+        location.reload();
+    }
+
+    // Display all word pairs initially
+    displayWordPairs();
+</script>
+</body>
+</html>
